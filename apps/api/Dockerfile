@@ -45,6 +45,7 @@ WORKDIR /repo
 
 RUN addgroup -S kmeets && adduser -S kmeets -G kmeets
 COPY --from=prod-deps /repo/node_modules /repo/node_modules
+COPY --from=prod-deps /repo/apps/api/node_modules /repo/apps/api/node_modules
 COPY --from=build /repo/packages/shared /repo/packages/shared
 COPY --from=build /repo/apps/api/dist /repo/apps/api/dist
 COPY --from=build /repo/apps/api/src/database/migrations /repo/apps/api/src/database/migrations
