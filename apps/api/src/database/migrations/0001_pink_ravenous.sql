@@ -1,0 +1,1 @@
+ALTER TABLE "reviews" ADD COLUMN "wants_to_connect" boolean DEFAULT false NOT NULL;

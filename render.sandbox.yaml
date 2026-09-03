@@ -1,0 +1,125 @@
+# Render Blueprint — FREE MOCK-TEST SANDBOX, not the real production
+# deploy. See render.yaml for the "real launch" blueprint (paid Postgres/
+# Redis plans, meant to be used once the company is registered and real
+# vendor accounts exist) and docs/SANDBOX_SETUP.md for the full walkthrough
+# that goes with this file.
+#
+# What's different from render.yaml, and why:
+#   - No `databases:` block. Render's own free Postgres plan expires 30
+#     days after creation and is deleted 14 days after that — fine for a
+#     quick look, not for something you'll want to keep coming back to.
+#     This instead points at a free Neon Postgres project (permanent, no
+#     credit card, never expires) via a DATABASE_URL you paste in by hand
+#     after creating it — see docs/SANDBOX_SETUP.md step 2.
+#   - kmeets-redis uses Render's free Key Value plan (`plan: free`)
+#     instead of `starter`. It never expires, but does NOT persist to disk
+#     — a restart clears it. That only ever costs a tester a fresh OTP
+#     code, so it's a fine trade for a free sandbox.
+#   - kmeets-api uses `plan: free` instead of `starter`: 512 MB RAM, and
+#     Render spins it down after 15 minutes with no traffic (~1 minute to
+#     wake back up on the next request — expect a slow first load after
+#     any idle stretch, not a broken deploy).
+#   - NODE_ENV is "development", not "production". K-Meets deliberately
+#     refuses to boot with NODE_ENV=production while any provider is still
+#     "mock" (apps/api/src/config/validate-production-config.ts) — that
+#     check exists specifically to stop a mock deploy like this one from
+#     ever being mistaken for the real thing, so it's not something to
+#     work around, and it stays on for the real render.yaml deploy.
+#   - EXPOSE_MOCK_OTP=true: the sandbox has no real SMS provider, so the
+#     login screen shows the OTP code directly instead of requiring log
+#     access. Double-gated in code so it can never leak a real code — see
+#     the comment on AuthService.requestOtp.
+
+services:
+  - type: keyvalue
+    name: kmeets-redis
+    region: singapore
+    plan: free
+    maxmemoryPolicy: noeviction
+    ipAllowList: [] # private network only — no public access needed
+
+  - type: web
+    name: kmeets-api
+    runtime: docker
+    region: singapore
+    plan: free
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: development
+      # Paste the connection string from your Neon project here after
+      # creating it (docs/SANDBOX_SETUP.md step 2) — Neon's dashboard
+      # calls it "Connection string". Include ?sslmode=require at the end
+      # if Neon's copy button doesn't already add it.
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: kmeets-redis
+          property: connectionString
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_TTL
+        value: 15m
+      - key: JWT_REFRESH_TTL
+        value: 30d
+      # Update once kmeets-web/kmeets-staff have their real onrender.com
+      # URLs (docs/SANDBOX_SETUP.md step 5) — until then the browser will
+      # block both frontend apps from calling this API at all.
+      - key: CORS_ORIGINS
+        value: "https://kmeets-web.onrender.com,https://kmeets-staff.onrender.com"
+      - key: SMS_PROVIDER
+        value: mock
+      - key: KYC_PROVIDER
+        value: mock
+      - key: PAYMENT_PROVIDER
+        value: mock
+      - key: PUSH_PROVIDER
+        value: mock
+      - key: STORAGE_PROVIDER
+        value: local
+      - key: EXPOSE_MOCK_OTP
+        value: "true"
+    # Run once after the first deploy, from Render's dashboard Shell tab
+    # for this service (docs/SANDBOX_SETUP.md step 6):
+    #   node dist/src/database/migrate.js
+    #   node dist/src/database/seed.js
+    # (NOT `pnpm --filter @kmeets/api db:migrate` / `db:seed` — those run
+    # via ts-node, a devDependency not installed in this image's
+    # production-only node_modules. nest build already compiles both to
+    # plain JS, so no ts-node is needed. seed.js creates a SUPER_ADMIN for
+    # +919999999999 by default — sign in as that number in the staff app,
+    # or set SEED_ADMIN_PHONE to your own number before running it.)
+
+  - type: web
+    name: kmeets-web
+    runtime: static
+    region: singapore
+    buildCommand: "corepack enable && corepack prepare pnpm@10.28.0 --activate && pnpm install --frozen-lockfile && pnpm --filter @kmeets/web build"
+    staticPublishPath: apps/web/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: "https://kmeets-api.onrender.com/v1"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  - type: web
+    name: kmeets-staff
+    runtime: static
+    region: singapore
+    buildCommand: "corepack enable && corepack prepare pnpm@10.28.0 --activate && pnpm install --frozen-lockfile && pnpm --filter @kmeets/staff build"
+    staticPublishPath: apps/staff/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: "https://kmeets-api.onrender.com/v1"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

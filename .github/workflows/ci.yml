@@ -1,0 +1,226 @@
+name: CI
+
+# Runs on every push/PR — this is the actual gate the Master Instruction's
+# build process calls for ("run tests, check for errors ... only then
+# proceed"). It's also, deliberately, the ONLY place the Dockerfiles and
+# docker-compose.yml under this repo get their build verified: the sandbox
+# this project was built in has no network access to any container
+# registry, so `docker build` there can only be reviewed by eye, never run.
+# CI has full internet access, so the docker-build job below is the first
+# real test those files get.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.28.0"
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r lint
+      - run: pnpm -r typecheck
+
+  unit-tests:
+    name: Unit tests (apps/api)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @kmeets/api test
+
+  build:
+    name: Build all apps
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # A placeholder API base URL is fine here — vite bakes VITE_API_BASE_URL
+      # in at build time (see apps/web/Dockerfile's ARG), but this job only
+      # checks that the build itself succeeds, not what it points at.
+      - run: pnpm -r build
+        env:
+          VITE_API_BASE_URL: "http://localhost:4000/v1"
+
+  backend-e2e:
+    name: Backend e2e (apps/api)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: devpassword
+          POSTGRES_DB: kmeets_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # apps/api/.env.test already points at localhost:5432/kmeets_test and
+      # localhost:6379/1, which is exactly where the service containers
+      # above are reachable from the runner — no env overrides needed. The
+      # suite's own global-setup applies migrations and truncates tables
+      # before running, so no separate migrate step is needed here either.
+      - run: pnpm --filter @kmeets/api test:e2e
+
+  frontend-e2e:
+    name: Frontend e2e (apps/web + apps/staff)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: devpassword
+          POSTGRES_DB: kmeets_dev
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # NODE_ENV=test relaxes the OTP request/verify throttle (see
+      # apps/api/src/modules/auth/auth.controller.ts) — needed because the
+      # seeded admin account's fixed phone number is logged into repeatedly
+      # across both Playwright suites in a single run, which would
+      # otherwise trip the real 3-request/hour per-phone limit.
+      NODE_ENV: test
+      DATABASE_URL: "postgresql://postgres:devpassword@localhost:5432/kmeets_dev?schema=public"
+      REDIS_URL: "redis://localhost:6379"
+      JWT_ACCESS_SECRET: "ci-access-secret"
+      JWT_REFRESH_SECRET: "ci-refresh-secret"
+      JWT_ACCESS_TTL: "15m"
+      JWT_REFRESH_TTL: "30d"
+      SMS_PROVIDER: "mock"
+      KYC_PROVIDER: "mock"
+      PAYMENT_PROVIDER: "mock"
+      PUSH_PROVIDER: "mock"
+      VITE_API_BASE_URL: "http://localhost:4000/v1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: |
+          pnpm --filter @kmeets/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @kmeets/api db:migrate
+      - run: pnpm --filter @kmeets/api db:seed
+      - name: Start API server
+        run: |
+          pnpm --filter @kmeets/api build
+          nohup pnpm --filter @kmeets/api start > /tmp/api.log 2>&1 &
+          npx wait-on http://localhost:4000/health -t 30000
+      - run: pnpm --filter @kmeets/web test:e2e
+      - run: pnpm --filter @kmeets/staff test:e2e
+      - name: Show API log on failure
+        if: failure()
+        run: cat /tmp/api.log
+      - name: Upload Playwright reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-reports
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+            apps/staff/playwright-report/
+            apps/staff/test-results/
+          retention-days: 7
+
+  docker-build:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          tags: kmeets-api:ci
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          tags: kmeets-web:ci
+          build-args: |
+            VITE_API_BASE_URL=https://api.example.com/v1
+      - name: Build staff image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/staff/Dockerfile
+          push: false
+          tags: kmeets-staff:ci
+          build-args: |
+            VITE_API_BASE_URL=https://api.example.com/v1
+      - name: Sanity-check the compose file parses
+        run: docker compose -f docker-compose.yml config > /dev/null

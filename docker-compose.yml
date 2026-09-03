@@ -1,0 +1,132 @@
+# Brings up the full deployable shape of K-Meets — API + both frontend apps
+# + Postgres + Redis — from the same Dockerfiles a real host would use.
+# This is NOT meant to replace local development (see docs/README.md's
+# "Getting the backend running" for that — faster iteration, no rebuild
+# per change). It exists so the containerized, "this is what production
+# would run" shape can be built and smoke-tested before any real hosting
+# account exists — see docs/DEPLOYMENT.md.
+#
+# Usage (from the repo root):
+#   docker compose up --build
+#   ./scripts/smoke-test.sh http://localhost:4000
+#
+# Every secret below is a clearly-fake local-only value — see
+# docs/ENVIRONMENT.md for what each one means, and docs/SECURITY_AUDIT.md
+# for why production refuses to boot with values like these.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: kmeets
+    ports:
+      - "5432:5432"
+    volumes:
+      - kmeets_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot: applies migrations, then exits. Uses the same built image as
+  # `api` (dist/src/database/migrate.js is part of the normal `nest build`
+  # output, not a separate build) so there's no drift between what migrates
+  # the database and what the API was actually built from.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: ["node", "dist/src/database/migrate.js"]
+    environment:
+      DATABASE_URL: postgresql://postgres:devpassword@postgres:5432/kmeets?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # One-shot: seeds the starter interests list and a SUPER_ADMIN account
+  # (see docs/README.md's "Signing in as the seeded admin") so the compose
+  # stack is actually usable end to end, not just running with an empty
+  # database.
+  seed:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: ["node", "dist/src/database/seed.js"]
+    environment:
+      DATABASE_URL: postgresql://postgres:devpassword@postgres:5432/kmeets?schema=public
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      PORT: "4000"
+      DATABASE_URL: postgresql://postgres:devpassword@postgres:5432/kmeets?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: local-compose-only-access-secret-not-for-prod
+      JWT_REFRESH_SECRET: local-compose-only-refresh-secret-not-for-prod
+      CORS_ORIGINS: http://localhost:8080,http://localhost:8081
+      SMS_PROVIDER: mock
+      KYC_PROVIDER: mock
+      PAYMENT_PROVIDER: mock
+      PUSH_PROVIDER: mock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:4000/v1
+    ports:
+      - "8080:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  staff:
+    build:
+      context: .
+      dockerfile: apps/staff/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:4000/v1
+    ports:
+      - "8081:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  kmeets_postgres_data:

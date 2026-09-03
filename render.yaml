@@ -1,0 +1,149 @@
+# Render Blueprint — a one-file description of every service K-Meets needs,
+# so a Render account (once one exists) can spin up the whole backend with
+# "New > Blueprint" pointed at this repo, instead of clicking through each
+# service by hand. See docs/DEPLOYMENT.md for the full deploy walkthrough
+# and docs/ENVIRONMENT.md for what each variable means.
+#
+# HONESTY NOTE: this was written by reading Render's published Blueprint
+# schema (render.com/docs/blueprint-spec), not by deploying it against a
+# real Render account — no such account exists yet (see docs/DEPLOYMENT.md's
+# "two things only a person can do"). Treat this as a strong starting point,
+# not a verified-working file: the first real deploy may need small
+# adjustments if Render's schema has moved since this was written. Render
+# validates and shows errors for the whole file before creating anything,
+# so a mistake here is caught before it costs anything.
+#
+# What this does NOT do: register the company, get vendor accounts, or pick
+# real values for the provider secrets below — every provider is left on
+# "mock" here, same as local dev, so this blueprint is safe to apply even
+# before any of that exists. Flipping providers to real vendors is its own
+# step, covered in docs/DEPLOYMENT.md's "Switching a provider from mock to
+# real".
+
+databases:
+  - name: kmeets-db
+    databaseName: kmeets
+    user: kmeets
+    region: singapore
+    postgresMajorVersion: "16"
+    plan: starter
+
+services:
+  # --- Redis: OTP codes + the background matching queue ---
+  - type: keyvalue
+    name: kmeets-redis
+    region: singapore
+    plan: starter
+    maxmemoryPolicy: noeviction
+    ipAllowList: [] # private network only — no public access needed
+
+  # --- API: the real work happens here ---
+  - type: web
+    name: kmeets-api
+    runtime: docker
+    region: singapore
+    plan: starter
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kmeets-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: kmeets-redis
+          property: connectionString
+      # Freshly generated per environment by Render — never the same value
+      # as local dev, and never typed in by hand. See docs/ENVIRONMENT.md.
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_TTL
+        value: 15m
+      - key: JWT_REFRESH_TTL
+        value: 30d
+      # Placeholder — replace with the real deployed apps/web and
+      # apps/staff URLs once those are live (see docs/DEPLOYMENT.md).
+      # Until this is set correctly, the browser will block both frontend
+      # apps from calling this API at all.
+      - key: CORS_ORIGINS
+        value: "https://app.kmeets.in,https://staff.kmeets.in"
+      # Every provider starts as "mock" — identical to local dev, and safe
+      # to deploy with. Switch each one individually once its vendor
+      # account exists; see docs/DEPLOYMENT.md's provider-switching guide.
+      # validateProductionConfig() (apps/api/src/config/) refuses to boot
+      # in production with an unsafe combination of these, so a forgotten
+      # switch fails loudly at startup rather than shipping quietly broken.
+      - key: SMS_PROVIDER
+        value: mock
+      - key: KYC_PROVIDER
+        value: mock
+      - key: PAYMENT_PROVIDER
+        value: mock
+      - key: PUSH_PROVIDER
+        value: mock
+      - key: STORAGE_PROVIDER
+        value: local
+    # Render does not run this automatically on every deploy (deliberately
+    # — see the Dockerfile's comment on why migrations aren't baked into
+    # the image's startup command: a rolling restart of multiple instances
+    # must never race running the same migration concurrently). After the
+    # first deploy, and after any deploy that includes a new migration,
+    # run once from Render's dashboard shell for this service:
+    #   node dist/src/database/migrate.js
+    # (NOT `pnpm --filter @kmeets/api db:migrate` — that script runs via
+    # ts-node, which is a devDependency and isn't installed in this image's
+    # production-only node_modules. nest build already compiles migrate.ts
+    # to plain JS at dist/src/database/migrate.js, so no ts-node is needed.)
+    # The first production admin is bootstrapped the same way — see
+    # docs/DEPLOYMENT.md's "Bootstrapping the first production admin".
+
+  # --- Consumer app: a static build, not a container — Render's native
+  # static hosting (global CDN, free TLS) is a better fit than the nginx
+  # Docker image for this than for anything server-side, so this uses
+  # Render's static-site service type instead of apps/web/Dockerfile. That
+  # Dockerfile stays useful for hosts without native static-site support. ---
+  - type: web
+    name: kmeets-web
+    runtime: static
+    region: singapore
+    buildCommand: "corepack enable && corepack prepare pnpm@10.28.0 --activate && pnpm install --frozen-lockfile && pnpm --filter @kmeets/web build"
+    staticPublishPath: apps/web/dist
+    envVars:
+      # Set this to kmeets-api's actual assigned URL (or custom domain)
+      # after the API's first deploy, including the /v1 suffix — e.g.
+      # https://kmeets-api.onrender.com/v1. Vite bakes VITE_ vars in at
+      # build time, so changing this requires a rebuild, not just a
+      # restart (Render does this automatically on redeploy).
+      - key: VITE_API_BASE_URL
+        value: "https://kmeets-api.onrender.com/v1"
+    routes:
+      # SPA fallback so React Router's client-side routes survive a direct
+      # navigation or refresh — the same job apps/web/nginx.conf does for
+      # the Docker path.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # --- Staff/admin dashboard: same shape as kmeets-web above. Consider
+  # restricting this service's URL (an unlisted subdomain, or Render's
+  # access-control options) once it's live — see docs/DEPLOYMENT.md. ---
+  - type: web
+    name: kmeets-staff
+    runtime: static
+    region: singapore
+    buildCommand: "corepack enable && corepack prepare pnpm@10.28.0 --activate && pnpm install --frozen-lockfile && pnpm --filter @kmeets/staff build"
+    staticPublishPath: apps/staff/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: "https://kmeets-api.onrender.com/v1"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

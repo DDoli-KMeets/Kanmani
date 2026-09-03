@@ -1,0 +1,793 @@
+<title>K-Meets Build Plan</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#faf7f4;
+  --surface:#ffffff;
+  --surface-2:#f4edec;
+  --ink:#1f1a2e;
+  --ink-muted:#6b6478;
+  --accent:#c31860;
+  --accent-soft:#f6dde6;
+  --accent-2:#a9701a;
+  --accent-2-soft:#f3e6cf;
+  --line:#e8dfdf;
+  --good:#2f7a52;
+  --good-soft:#e1f0e6;
+  --warn:#9c6a18;
+  --warn-soft:#f6ead0;
+  --crit:#ab3a3a;
+  --crit-soft:#f8e1e1;
+  --code-bg:#f0e9e3;
+  --shadow: 0 1px 2px rgba(31,26,46,0.06), 0 8px 24px -12px rgba(31,26,46,0.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#161320;
+    --surface:#1e1a2d;
+    --surface-2:#261f37;
+    --ink:#f1ece8;
+    --ink-muted:#b3a8c2;
+    --accent:#f0568f;
+    --accent-soft:#3a2233;
+    --accent-2:#e3a54a;
+    --accent-2-soft:#3a2f1c;
+    --line:#342c48;
+    --good:#5fae82;
+    --good-soft:#1e2f26;
+    --warn:#d1a24f;
+    --warn-soft:#332811;
+    --crit:#e37b7b;
+    --crit-soft:#3a2020;
+    --code-bg:#221d33;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#161320;
+  --surface:#1e1a2d;
+  --surface-2:#261f37;
+  --ink:#f1ece8;
+  --ink-muted:#b3a8c2;
+  --accent:#f0568f;
+  --accent-soft:#3a2233;
+  --accent-2:#e3a54a;
+  --accent-2-soft:#3a2f1c;
+  --line:#342c48;
+  --good:#5fae82;
+  --good-soft:#1e2f26;
+  --warn:#d1a24f;
+  --warn-soft:#332811;
+  --crit:#e37b7b;
+  --crit-soft:#3a2020;
+  --code-bg:#221d33;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+}
+
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size:16px;
+  line-height:1.6;
+  margin:0;
+}
+h1,h2,h3,h4{
+  font-family:'Fraunces', Georgia, serif;
+  font-weight:600;
+  text-wrap:balance;
+  line-height:1.15;
+  margin:0;
+}
+p{margin:0 0 1em 0;}
+a{color:var(--accent);}
+code, .mono{font-family:'JetBrains Mono', ui-monospace, monospace; font-size:0.88em;}
+
+.layout{
+  display:grid;
+  grid-template-columns: 260px minmax(0,1fr);
+  max-width:1240px;
+  margin:0 auto;
+}
+@media (max-width: 960px){
+  .layout{grid-template-columns: 1fr;}
+  .sidebar{display:none;}
+  .mobilenav{display:flex;}
+}
+
+.sidebar{
+  position:sticky;
+  top:0;
+  align-self:start;
+  height:100vh;
+  overflow-y:auto;
+  padding:32px 20px 32px 28px;
+  border-right:1px solid var(--line);
+}
+.sidebar-brand{
+  font-family:'Fraunces', serif;
+  font-weight:700;
+  font-size:1.05rem;
+  letter-spacing:0.02em;
+  margin-bottom:4px;
+}
+.sidebar-sub{
+  font-size:0.78rem;
+  color:var(--ink-muted);
+  margin-bottom:28px;
+}
+.toc{list-style:none;margin:0;padding:0;}
+.toc li{margin-bottom:2px;}
+.toc a{
+  display:flex;
+  gap:10px;
+  align-items:baseline;
+  text-decoration:none;
+  color:var(--ink-muted);
+  font-size:0.86rem;
+  padding:6px 8px;
+  border-radius:6px;
+}
+.toc a:hover{background:var(--surface-2); color:var(--ink);}
+.toc .num{font-family:'JetBrains Mono', monospace; font-size:0.72rem; color:var(--accent); width:1.6em; flex:none;}
+
+.mobilenav{
+  display:none;
+  gap:8px;
+  overflow-x:auto;
+  padding:14px 16px;
+  border-bottom:1px solid var(--line);
+  background:var(--surface);
+  position:sticky; top:0; z-index:5;
+}
+.mobilenav a{
+  flex:none;
+  font-size:0.78rem;
+  color:var(--ink-muted);
+  text-decoration:none;
+  background:var(--surface-2);
+  padding:6px 10px;
+  border-radius:999px;
+  font-family:'JetBrains Mono',monospace;
+}
+
+main{padding:40px 48px 100px;}
+@media (max-width:640px){ main{padding:24px 20px 80px;} }
+
+.masthead{
+  margin-bottom:44px;
+  padding-bottom:28px;
+  border-bottom:1px solid var(--line);
+}
+.eyebrow{
+  font-family:'JetBrains Mono', monospace;
+  font-size:0.74rem;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:10px;
+}
+.masthead h1{font-size:clamp(1.7rem, 3.2vw, 2.5rem); margin-bottom:10px;}
+.masthead .dek{color:var(--ink-muted); font-size:1.05rem; max-width:56ch; margin-bottom:20px;}
+.meta-row{display:flex; flex-wrap:wrap; gap:8px 10px; font-size:0.82rem; color:var(--ink-muted);}
+.meta-chip{
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  padding:4px 10px;
+  border-radius:999px;
+}
+
+section.doc-section{
+  margin-bottom:56px;
+  scroll-margin-top:24px;
+}
+.sec-head{
+  display:flex;
+  align-items:baseline;
+  gap:14px;
+  margin-bottom:18px;
+  padding-bottom:12px;
+  border-bottom:2px solid var(--ink);
+}
+.sec-num{
+  font-family:'JetBrains Mono', monospace;
+  font-size:0.95rem;
+  color:var(--accent);
+  font-weight:600;
+}
+.sec-head h2{font-size:1.5rem;}
+
+.lede{font-size:1.05rem; color:var(--ink-muted); max-width:66ch; margin-bottom:20px;}
+
+h3.sub{font-size:1.05rem; margin:28px 0 12px; font-weight:600;}
+h4.subsub{font-family:'Public Sans',sans-serif; font-size:0.95rem; font-weight:700; margin:18px 0 8px;}
+
+.prose{max-width:70ch;}
+.prose p{color:var(--ink);}
+
+/* callouts */
+.callout{
+  border-radius:10px;
+  padding:16px 18px;
+  margin:18px 0;
+  border:1px solid var(--line);
+  background:var(--surface-2);
+  max-width:74ch;
+}
+.callout.flag{background:var(--warn-soft); border-color:var(--warn); }
+.callout.flag .callout-label{color:var(--warn);}
+.callout.stop{background:var(--crit-soft); border-color:var(--crit);}
+.callout.stop .callout-label{color:var(--crit);}
+.callout.note{background:var(--accent-soft); border-color:var(--accent);}
+.callout.note .callout-label{color:var(--accent);}
+.callout-label{
+  font-family:'JetBrains Mono', monospace;
+  font-size:0.72rem;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  font-weight:600;
+  margin-bottom:6px;
+  display:block;
+}
+.callout p:last-child{margin-bottom:0;}
+
+/* tables */
+.table-wrap{overflow-x:auto; margin:16px 0 24px; border:1px solid var(--line); border-radius:10px;}
+table{width:100%; border-collapse:collapse; font-size:0.9rem; background:var(--surface);}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top;}
+th{
+  background:var(--surface-2);
+  font-family:'JetBrains Mono', monospace;
+  font-size:0.72rem;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  color:var(--ink-muted);
+  font-weight:600;
+}
+tr:last-child td{border-bottom:none;}
+td.num, th.num{font-family:'JetBrains Mono',monospace; font-variant-numeric:tabular-nums; text-align:right;}
+
+/* pills */
+.pill{
+  display:inline-block;
+  font-family:'JetBrains Mono', monospace;
+  font-size:0.68rem;
+  font-weight:600;
+  letter-spacing:0.03em;
+  padding:2px 8px;
+  border-radius:999px;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+.pill-must{background:var(--crit-soft); color:var(--crit);}
+.pill-should{background:var(--warn-soft); color:var(--warn);}
+.pill-nice{background:var(--good-soft); color:var(--good);}
+.pill-future{background:var(--surface-2); color:var(--ink-muted); border:1px solid var(--line);}
+.pill-sev-critical{background:var(--crit-soft); color:var(--crit);}
+.pill-sev-high{background:var(--warn-soft); color:var(--warn);}
+.pill-sev-medium{background:var(--accent-2-soft); color:var(--accent-2);}
+.pill-sev-low{background:var(--good-soft); color:var(--good);}
+
+/* card grid */
+.card-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; margin:18px 0 24px;}
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:16px 18px;
+  box-shadow:var(--shadow);
+}
+.card h4{font-family:'Fraunces',serif; font-size:1rem; margin-bottom:6px; font-weight:600;}
+.card p{font-size:0.87rem; color:var(--ink-muted); margin-bottom:0;}
+
+/* journey steps */
+.journey{
+  display:flex; flex-wrap:wrap; gap:0; align-items:stretch; margin:18px 0 26px;
+}
+.journey .step{
+  background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:12px 14px; min-width:150px; flex:1 1 150px; position:relative;
+}
+.journey .step .n{font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--accent); display:block; margin-bottom:4px;}
+.journey .step p{font-size:0.83rem; margin:0; color:var(--ink-muted);}
+.journey .arrow{
+  display:flex; align-items:center; justify-content:center; padding:0 6px; color:var(--ink-muted); font-size:1.1rem; flex:none;
+}
+@media (max-width:640px){ .journey{flex-direction:column;} .journey .arrow{transform:rotate(90deg); padding:2px 0;} }
+
+/* roadmap timeline */
+.timeline{position:relative; margin:20px 0; padding-left:28px; border-left:2px solid var(--line);}
+.tl-item{position:relative; padding-bottom:22px;}
+.tl-item:last-child{padding-bottom:0;}
+.tl-item::before{
+  content:''; position:absolute; left:-34px; top:3px; width:11px; height:11px; border-radius:50%;
+  background:var(--accent); border:2px solid var(--surface); box-shadow:0 0 0 2px var(--accent);
+}
+.tl-item .tl-head{display:flex; gap:10px; align-items:baseline; margin-bottom:3px; flex-wrap:wrap;}
+.tl-item .tl-phase{font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--accent); font-weight:600;}
+.tl-item .tl-title{font-weight:700; font-size:0.95rem;}
+.tl-item p{font-size:0.86rem; color:var(--ink-muted); margin:0;}
+
+/* status legend */
+.legend{display:flex; gap:16px; flex-wrap:wrap; margin:10px 0 22px; font-size:0.78rem; color:var(--ink-muted);}
+.legend span{display:inline-flex; align-items:center; gap:6px;}
+
+hr.rule{border:none; border-top:1px solid var(--line); margin:40px 0;}
+
+footer.doc-footer{
+  border-top:1px solid var(--line);
+  margin-top:40px;
+  padding-top:24px;
+  font-size:0.82rem;
+  color:var(--ink-muted);
+}
+</style>
+
+<div class="mobilenav" id="mobilenav"></div>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Table of contents">
+    <div class="sidebar-brand">K-Meets</div>
+    <div class="sidebar-sub">Build Plan · Phase 1&ndash;2</div>
+    <ul class="toc" id="toc"></ul>
+  </nav>
+
+  <main>
+    <div class="masthead">
+      <div class="eyebrow">Product Understanding &amp; Technical Architecture</div>
+      <h1>Building K&#8209;Meets, end to end</h1>
+      <p class="dek">A plain-language walkthrough of what K&#8209;Meets is, what we'll build first, how it will be engineered, and the decisions that need your call before any code is written &mdash; per your Master Instruction, steps 1&ndash;2.</p>
+      <div class="meta-row">
+        <span class="meta-chip">Prepared for Meenu &middot; Founder, K&#8209;Meets</span>
+        <span class="meta-chip">Source: Investor Document + Deck (July 2026)</span>
+        <span class="meta-chip">Status: awaiting your sign-off before Phase 3</span>
+      </div>
+    </div>
+
+    <!-- 1 -->
+    <section class="doc-section" id="s1">
+      <div class="sec-head"><span class="sec-num">01</span><h2>What I understand</h2></div>
+      <p class="lede">In one sentence: K&#8209;Meets is a booking app that pairs you with one stranger (or a small, gender&#8209;balanced group) at a vetted caf&eacute; at a time you both have free, keeps you anonymous until you physically arrive, and turns that first meeting into an ongoing community of people who keep meeting up.</p>
+
+      <div class="prose">
+        <h4 class="subsub">The problem it solves</h4>
+        <p>Urban Indians are surrounded by people and starving for real conversation. Dating apps optimise for romance and photos; Meetup.com&#8209;style events are generic and unsafe-feeling; WhatsApp groups have no structure. Nobody has built a curated, safety&#8209;first way for two strangers who share interests to sit down and talk &mdash; friendship, mentorship, or just company, not necessarily romance.</p>
+
+        <h4 class="subsub">Why K&#8209;Meets specifically</h4>
+        <p>You've run two Hyderabad caf&eacute;s (Tree Stories Caf&eacute; and Caf&eacute; Kanmani) for five years and already ran a manual version of this: a 12&#8209;hour, ticketed event with 40 paying attendees and 100% retention, before any software existed. That's real evidence people will pay for curated connection, and it gives K&#8209;Meets two things most pre&#8209;seed apps don't have: 20+ real venue&#8209;owner relationships to onboard partners fast, and first&#8209;hand knowledge of what a caf&eacute; needs (footfall, table turn, no&#8209;show handling) to say yes.</p>
+
+        <h4 class="subsub">The core mechanic</h4>
+        <p>A user marks when they're free and which venue tier they'd like. The system matches two (or a small group of) users with overlapping availability and shared interests. Until both people physically check in at the venue, neither can see the other's name or photo &mdash; only age, gender, relationship status and top interests. The venue host confirms arrival (an ID glance, not a stored ID), which unlocks identities and starts the meetup. Afterwards, users rate the experience, can choose to stay connected, and are funnelled toward paid community events (day trips, trail runs) that become the retention engine.</p>
+
+        <h4 class="subsub">How the business makes money</h4>
+        <p>Three streams: an entry ticket per booking (&#8377;249&ndash;&#8377;2,049 depending on venue tier, blended average &#8377;450), a 5% commission on the food bill at the venue (venues keep 95%, which is the pitch to get them to say yes), and ticketed community events (already validated at &#8377;1,100/head). Gross margin per meetup works out to roughly 97%, because the venue &mdash; not K&#8209;Meets &mdash; carries the physical cost of space, food and staff.</p>
+      </div>
+
+      <div class="callout note">
+        <span class="callout-label">Treating your materials as source of truth</span>
+        <p>Everything in this document is built from your Investor Document, Investor Deck and Master Instruction. Where I'm recommending something that isn't explicitly in those materials (mostly technical implementation choices), I've marked it clearly and explained why, per your instruction not to silently make decisions that affect cost, security or long-term maintainability.</p>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="doc-section" id="s2">
+      <div class="sec-head"><span class="sec-num">02</span><h2>Features</h2></div>
+      <p class="lede">Everything from your Product Architecture and Build Phases sections, sorted so the first version stays buildable. <strong>MUST HAVE</strong> is the smallest app that actually delivers your core mechanic and can take money safely. Nothing outside MUST/SHOULD ships before Year 1 traction targets are close.</p>
+
+      <div class="legend">
+        <span><span class="pill pill-must">Must have</span> can't launch without it</span>
+        <span><span class="pill pill-should">Should have</span> needed within weeks of launch</span>
+        <span><span class="pill pill-nice">Nice to have</span> improves the experience, not blocking</span>
+        <span><span class="pill pill-future">Future</span> Year 2+ / post traction</span>
+      </div>
+
+      <h3 class="sub">Consumer app</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Feature</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Phone OTP sign-up &amp; login</td><td><span class="pill pill-must">Must</span></td><td>No password to manage &mdash; simpler and safer for users</td></tr>
+            <tr><td>Profile: name, age, gender, relationship status, up to 5 interests</td><td><span class="pill pill-must">Must</span></td><td>Interests drive the match score</td></tr>
+            <tr><td>Video KYC (liveness + PAN/Passport)</td><td><span class="pill pill-must">Must</span></td><td>Required before any booking &mdash; your #1 safety layer</td></tr>
+            <tr><td>Browse venues by tier, city, photos, CCTV badge</td><td><span class="pill pill-must">Must</span></td><td></td></tr>
+            <tr><td>Set availability &amp; book a 1-on-1 slot</td><td><span class="pill pill-must">Must</span></td><td>Core mechanic</td></tr>
+            <tr><td>Auto-match on overlapping availability + interests</td><td><span class="pill pill-must">Must</span></td><td>Runs as a background job, not in the request path</td></tr>
+            <tr><td>Anonymity until both check in at venue</td><td><span class="pill pill-must">Must</span></td><td>Enforced server-side, not just hidden in the UI</td></tr>
+            <tr><td>Entry ticket payment (Razorpay)</td><td><span class="pill pill-must">Must</span></td><td></td></tr>
+            <tr><td>Pre-meetup safety briefing + visible SOS button</td><td><span class="pill pill-must">Must</span></td><td></td></tr>
+            <tr><td>Venue check-in / reveal flow</td><td><span class="pill pill-must">Must</span></td><td></td></tr>
+            <tr><td>Post-meetup rating + connect/pass</td><td><span class="pill pill-must">Must</span></td><td></td></tr>
+            <tr><td>Report a user</td><td><span class="pill pill-must">Must</span></td><td>Can't ship a stranger-meetup app without this on day one</td></tr>
+            <tr><td>Community event listing, RSVP &amp; payment</td><td><span class="pill pill-must">Must</span></td><td>This is your Sprint 1 &mdash; already validated and revenue-positive</td></tr>
+            <tr><td>Group meetups (4 or 6, gender-balanced)</td><td><span class="pill pill-should">Should</span></td><td>Lower-pressure entry point; needs enough users to fill groups first</td></tr>
+            <tr><td>Push / SMS notifications (match found, reminders)</td><td><span class="pill pill-should">Should</span></td><td></td></tr>
+            <tr><td>Referral program ("bring a friend")</td><td><span class="pill pill-should">Should</span></td><td>Your stated zero/negative-CAC growth engine</td></tr>
+            <tr><td>Community circles (interest-based groups post-meetup)</td><td><span class="pill pill-nice">Nice</span></td><td>Retention layer, not needed for launch traction</td></tr>
+            <tr><td>Coin wallet (no-show penalty / refund credit)</td><td><span class="pill pill-nice">Nice</span></td><td>Can start with a simpler strike system, add coins later</td></tr>
+            <tr><td>In-app chat before reveal</td><td><span class="pill pill-future">Future</span></td><td>Deliberately excluded &mdash; the product's point is meeting in person, not chatting first</td></tr>
+            <tr><td>Multi-city discovery</td><td><span class="pill pill-future">Future</span></td><td>Bangalore in Year 2 per your plan</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub">Partner app (venue dashboard)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Feature</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Bookings calendar for the venue</td><td><span class="pill pill-must">Must</span></td><td></td></tr>
+            <tr><td>Check-in (confirm both parties arrived)</td><td><span class="pill pill-must">Must</span></td><td>This action is what triggers the identity reveal</td></tr>
+            <tr><td>SOS alert screen</td><td><span class="pill pill-must">Must</span></td><td>Staff must see this the instant a user presses SOS</td></tr>
+            <tr><td>Payout summary (food commission owed to K-Meets)</td><td><span class="pill pill-should">Should</span></td><td>Can be a manual monthly statement for the first few venues</td></tr>
+            <tr><td>Live "who's in-house right now" monitor</td><td><span class="pill pill-nice">Nice</span></td><td></td></tr>
+            <tr><td>Reviews / ratings the venue received</td><td><span class="pill pill-nice">Nice</span></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub">Admin dashboard</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Feature</th><th>Priority</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Venue onboarding &amp; management</td><td><span class="pill pill-must">Must</span></td><td></td></tr>
+            <tr><td>User &amp; KYC review queue</td><td><span class="pill pill-must">Must</span></td><td></td></tr>
+            <tr><td>Reports / moderation queue with 3-strike actions</td><td><span class="pill pill-must">Must</span></td><td></td></tr>
+            <tr><td>SOS incident log</td><td><span class="pill pill-must">Must</span></td><td></td></tr>
+            <tr><td>Basic metrics: users, meetups, revenue, match rate</td><td><span class="pill pill-must">Must</span></td><td>Postgres views are enough at Year-1 volume &mdash; see &sect;06</td></tr>
+            <tr><td>Finance: commission &amp; payout tracking</td><td><span class="pill pill-should">Should</span></td><td></td></tr>
+            <tr><td>Full ClickHouse analytics layer</td><td><span class="pill pill-future">Future</span></td><td>Flagged in &sect;06 &mdash; premature at Year-1 scale</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="doc-section" id="s3">
+      <div class="sec-head"><span class="sec-num">03</span><h2>Users &amp; permissions</h2></div>
+      <p class="lede">Five roles. No more &mdash; extra roles are extra attack surface and extra UI to maintain, and none of the rest are justified yet.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Role</th><th>Who they are</th><th>Can do</th><th>Cannot do</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Visitor</strong></td><td>Not signed in</td><td>View landing page, general app info</td><td>See any venue, user or event detail</td></tr>
+            <tr><td><strong>Member</strong></td><td>KYC-verified consumer</td><td>Book, get matched, attend events, rate, report, refer</td><td>See another member's identity before mutual check-in; access any other member's data; access admin/venue tools</td></tr>
+            <tr><td><strong>Venue host / staff</strong></td><td>Caf&eacute; owner or staff K-Meets has onboarded</td><td>See their venue's bookings, check members in, trigger/receive SOS, view their payouts</td><td>See member identities before check-in beyond what's needed to verify; see other venues' data; touch platform-wide settings</td></tr>
+            <tr><td><strong>Trust &amp; Safety admin</strong></td><td>Your first ops hire (per your roadmap, from M0)</td><td>Review KYC, moderate reports, manage strikes/bans, view SOS log</td><td>Touch finance/payouts, change platform configuration</td></tr>
+            <tr><td><strong>Super admin</strong></td><td>You, and later a co-founder/CTO</td><td>Everything above, plus venue onboarding, finance, platform configuration, admin user management</td><td>&mdash;</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout note">
+        <span class="callout-label">Design rule that follows from this</span>
+        <p>Every one of these boundaries is enforced on the backend, in the API itself &mdash; never only by hiding a button in the app. A member's phone sending a raw request for another member's name before check-in must be rejected by the server, the same as if they'd tried it through the app normally. This is a hard security requirement, detailed in &sect;08.</p>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="doc-section" id="s4">
+      <div class="sec-head"><span class="sec-num">04</span><h2>User journeys</h2></div>
+      <p class="lede">The four journeys that matter most for launch.</p>
+
+      <h3 class="sub">A. First-time member, 1-on-1 meetup</h3>
+      <div class="journey">
+        <div class="step"><span class="n">01</span><p>Sign up with phone OTP, set profile &amp; up to 5 interests</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">02</span><p>Record 10-second Video KYC (face + PAN/Passport), wait 2&ndash;4 hrs for "Verified" badge</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">03</span><p>Browse venues, pick a tier, mark availability, pay entry ticket</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">04</span><p>System matches on overlap + interests; identity stays hidden</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">05</span><p>Gets safety briefing + SOS reminder, heads to venue</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">06</span><p>Both check in &rarr; names/photos unlock &rarr; meetup begins</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">07</span><p>Rates the meetup, chooses connect/pass, sees suggested community events</p></div>
+      </div>
+
+      <h3 class="sub">B. Venue host, on a booking day</h3>
+      <div class="journey">
+        <div class="step"><span class="n">01</span><p>Opens partner app, sees today's bookings</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">02</span><p>Member A arrives &rarr; host glances at ID, taps "checked in" (no ID data stored)</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">03</span><p>Member B arrives &rarr; same step &rarr; system reveals both identities to each other</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">04</span><p>If SOS is pressed at the table, host gets an immediate, unmissable alert</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">05</span><p>Month end: reviews payout summary for food commission owed</p></div>
+      </div>
+
+      <h3 class="sub">C. Trust &amp; Safety admin, handling a report</h3>
+      <div class="journey">
+        <div class="step"><span class="n">01</span><p>Report lands in moderation queue with booking context</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">02</span><p>Reviews both users' history, ratings, prior strikes</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">03</span><p>Applies outcome: warning &rarr; 7-day suspension &rarr; permanent ban</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">04</span><p>Affected user notified with reason; action logged to audit trail</p></div>
+      </div>
+
+      <h3 class="sub">D. Someone presses SOS mid-meetup</h3>
+      <div class="journey">
+        <div class="step"><span class="n">01</span><p>One tap on a persistent, always-visible SOS button</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">02</span><p>Alert fires to venue host screen and the K-Meets safety on-call simultaneously</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">03</span><p>Works offline-tolerant: request retries automatically until it lands</p></div>
+        <div class="arrow">&rarr;</div>
+        <div class="step"><span class="n">04</span><p>Incident logged with response time; the other party is auto-flagged for review</p></div>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="doc-section" id="s5">
+      <div class="sec-head"><span class="sec-num">05</span><h2>Technical architecture</h2></div>
+      <p class="lede">Three applications sharing one backend, in plain terms: <strong>frontend</strong> is what people click on, <strong>backend</strong> is the program running on a server that holds the real logic and talks to the database, and the <strong>database</strong> is where all the data actually lives permanently.</p>
+
+      <div class="card-grid">
+        <div class="card"><h4>Consumer app</h4><p>What members use to sign up, book, get matched, and check in. Runs on a phone.</p></div>
+        <div class="card"><h4>Partner dashboard</h4><p>What venue hosts use to see bookings and check members in. Runs in a browser, works fine on a phone screen too.</p></div>
+        <div class="card"><h4>Admin dashboard</h4><p>What you and Trust &amp; Safety use to run the business. Runs in a browser.</p></div>
+        <div class="card"><h4>Backend API</h4><p>One shared program all three apps talk to. Owns every rule about who can see what.</p></div>
+        <div class="card"><h4>Database</h4><p>PostgreSQL &mdash; the single source of truth for users, bookings, matches, payments.</p></div>
+        <div class="card"><h4>Background workers</h4><p>Handles matching, reminders, and payouts without making anyone wait on a spinning screen.</p></div>
+      </div>
+
+      <h4 class="subsub">How a booking actually flows through the system</h4>
+      <div class="prose">
+        <p>The consumer app never talks to the database directly &mdash; it only ever talks to the backend API, and the backend is the only thing with a key to the database. When a member books a slot, the app sends that request to the API; the API checks the member is KYC-verified and has paid, writes a booking row to Postgres, and puts a "try to match this booking" job on a queue (Redis). A background worker picks that job up a few seconds later, looks for another booking with overlapping availability and similar interests, and if it finds one, marks both as matched &mdash; all without the member sitting on a loading screen waiting for a live search to finish. The two matched users' apps get a push notification. Nothing about either user's name or photo is ever sent to the other's device until the venue host taps "checked in" for both of them at the venue &mdash; that check runs entirely on the backend, so there's no way to bypass it by inspecting or replaying an app request.</p>
+      </div>
+
+      <h4 class="subsub">Diagram &mdash; request flow</h4>
+      <div class="table-wrap" style="padding:20px; background:var(--surface);">
+        <pre class="mono" style="margin:0; white-space:pre-wrap; font-size:0.82rem; line-height:1.7; color:var(--ink-muted);">Consumer app ──┐
+Partner app ───┼──▶  Backend API  ──▶  PostgreSQL (source of truth)
+Admin app ─────┘        │  │
+                         │  └──▶  Redis (cache + job queue)
+                         │            │
+                         │            ▼
+                         │      Background workers ──▶ matching · reminders · payouts · KYC polling
+                         │
+                         ├──▶  Razorpay (payments)
+                         ├──▶  Signzy / Digio (KYC)
+                         ├──▶  S3 + CloudFront (photos, KYC media)
+                         └──▶  SMS/OTP + Push notification providers</pre>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="doc-section" id="s6">
+      <div class="sec-head"><span class="sec-num">06</span><h2>Technology stack</h2></div>
+      <p class="lede">Your deck already names most of this stack to investors, so I'm treating it as the default and building against it. Two places where I'm recommending a change are called out below with plain-language reasoning &mdash; these affect cost and timeline, so they're also in your Open Questions (&sect;12) rather than decided silently.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Backend API</td><td>Node.js + TypeScript, NestJS framework</td><td>Matches your deck. NestJS adds structure (each feature in its own module) so the codebase stays navigable as you hire developers &mdash; important since you're not reviewing the code yourself.</td></tr>
+            <tr><td>Primary database</td><td>PostgreSQL</td><td>Matches your deck. Handles relationships (users&harr;bookings&harr;venues) reliably and has the strongest data-integrity guarantees for money and identity data.</td></tr>
+            <tr><td>Analytics database</td><td class="mono">Deferred &mdash; see flag below</td><td>ClickHouse in your deck is built for querying billions of events; at Year-1 volume (2,400 meetups) Postgres views serve the admin dashboard fine and remove an entire system to operate.</td></tr>
+            <tr><td>Cache &amp; job queue</td><td>Redis + BullMQ</td><td>Matches your deck. Runs the matching algorithm, reminders and payouts as background jobs instead of making users wait.</td></tr>
+            <tr><td>Payments</td><td>Razorpay</td><td>Matches your deck. India-first, handles UPI/cards/netbanking, hosted checkout means card numbers never touch our servers.</td></tr>
+            <tr><td>KYC</td><td>Signzy or Digio (built behind a swappable interface)</td><td>Matches your deck &mdash; both are RBI-adjacent, India-focused video KYC providers. We won't hard-wire to one; a thin adapter layer lets you switch providers later without touching the rest of the app.</td></tr>
+            <tr><td>File &amp; media storage</td><td>AWS S3 + CloudFront</td><td>Standard, cheap, and KYC videos can be stored with strict access controls and auto-deletion.</td></tr>
+            <tr><td>Push notifications</td><td>Firebase Cloud Messaging</td><td>Matches your deck.</td></tr>
+            <tr><td>SMS / OTP</td><td>MSG91 (India-focused)</td><td>Not named in your deck; cheaper per-SMS than global providers for Indian numbers, and has built-in OTP templates.</td></tr>
+            <tr><td>Hosting / cloud</td><td>AWS, Mumbai region (<span class="mono">ap-south-1</span>)</td><td>Matches your deck's "AWS/GCP." Recommending Mumbai over the newer Hyderabad region for now &mdash; it has the full range of managed services available; we'll re-check Hyderabad-region availability before go-live since it may close the latency gap.</td></tr>
+            <tr><td>Compute</td><td>AWS Fargate (managed containers) or App Runner</td><td>No servers for you to patch or reboot &mdash; AWS runs the containers, we just deploy updates.</td></tr>
+            <tr><td>CI/CD</td><td>GitHub Actions</td><td>Free at this scale. Every change is tested and type-checked automatically before it can go live &mdash; a broken build cannot deploy.</td></tr>
+            <tr><td>Error tracking</td><td>Sentry</td><td>Generous free tier; tells us exactly what broke and for whom, without exposing that detail to users.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout flag">
+        <span class="callout-label">Flag &mdash; consumer app: native vs. web-first</span>
+        <p>Your deck specifies React Native for iOS + Android. That's a fine long-term choice and I've kept it as the default build target. But native apps require an Apple Developer account (paid, and Apple's review can take 1&ndash;2 weeks per release, sometimes with rejections to fix) and a Google Play account, before your first user can install anything. An alternative is to launch the consumer experience as a mobile-optimised web app first (installable to a home screen, no store review, ships the moment we deploy it) and add native wrapping once you have traction to show reviewers and the extra polish is worth it. This genuinely changes your Month 0&ndash;3 timeline, so I've put it to you directly in &sect;12 rather than deciding it myself.</p>
+      </div>
+
+      <div class="callout flag">
+        <span class="callout-label">Flag &mdash; ClickHouse deferred</span>
+        <p>Your deck lists ClickHouse for the admin dashboard's analytics. At 4,000 users and 2,400 meetups in Year 1, that's a second database to secure, back up and pay for, for a query load Postgres handles comfortably with the right indexes and a couple of summary views. I'm recommending we design the schema so adding ClickHouse later (once volume genuinely needs it, likely well into Year 2) is a clean addition, not a rewrite &mdash; but skip standing it up now. This is a cost/complexity call I'm comfortable making without asking, since it only removes something, doesn't add risk, and is easy to add back.</p>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="doc-section" id="s7">
+      <div class="sec-head"><span class="sec-num">07</span><h2>Database design</h2></div>
+      <p class="lede">In plain terms: a <em>table</em> is like a spreadsheet tab (one row per user, one row per booking); a <em>foreign key</em> is a column that points at a row in another table (a booking "points at" the user who made it). Below are the core tables for the MVP &mdash; the actual column-by-column design happens in Phase 4, once you've signed off on this document.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Table</th><th>Purpose</th><th>Key relationships</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">users</td><td>One row per member: phone, name, DOB, gender, relationship status, account status</td><td>&mdash;</td></tr>
+            <tr><td class="mono">kyc_verifications</td><td>Verification status per user &mdash; stores a provider reference and a verified/rejected flag only</td><td>&rarr; users</td></tr>
+            <tr><td class="mono">user_interests</td><td>Links users to up to 5 interests each</td><td>&rarr; users, &rarr; interests</td></tr>
+            <tr><td class="mono">venues</td><td>Venue name, address, tier, CCTV-verified flag, photos</td><td>&mdash;</td></tr>
+            <tr><td class="mono">venue_staff</td><td>Which user accounts can act as host for a venue</td><td>&rarr; venues, &rarr; users</td></tr>
+            <tr><td class="mono">bookings</td><td>One row per slot a user has booked: venue, date/time, format, status, amount paid</td><td>&rarr; users, &rarr; venues</td></tr>
+            <tr><td class="mono">matches</td><td>Pairs (or groups) two bookings together once the matching job finds a fit</td><td>&rarr; bookings</td></tr>
+            <tr><td class="mono">checkins</td><td>Records when each member actually arrived and who confirmed it &mdash; this is what unlocks the reveal</td><td>&rarr; bookings, &rarr; venue_staff</td></tr>
+            <tr><td class="mono">community_events</td><td>Trips, trail runs, farm days &mdash; date, capacity, price</td><td>&mdash;</td></tr>
+            <tr><td class="mono">event_rsvps</td><td>Who registered for which event and their payment status</td><td>&rarr; community_events, &rarr; users</td></tr>
+            <tr><td class="mono">payments</td><td>Every Razorpay transaction: booking or event, amount, status, Razorpay reference</td><td>&rarr; users</td></tr>
+            <tr><td class="mono">venue_payouts</td><td>Monthly food-commission statement per venue</td><td>&rarr; venues</td></tr>
+            <tr><td class="mono">reviews</td><td>Post-meetup ratings, of the other member and of the venue</td><td>&rarr; bookings, &rarr; users</td></tr>
+            <tr><td class="mono">reports</td><td>User-filed safety/behaviour reports and their resolution</td><td>&rarr; users, &rarr; bookings</td></tr>
+            <tr><td class="mono">user_strikes</td><td>Warning / suspension / ban history per user</td><td>&rarr; users</td></tr>
+            <tr><td class="mono">sos_alerts</td><td>Every SOS trigger, response time, resolution notes</td><td>&rarr; bookings, &rarr; venues</td></tr>
+            <tr><td class="mono">admin_users</td><td>Staff accounts with a role (Trust &amp; Safety / Super Admin)</td><td>&mdash;</td></tr>
+            <tr><td class="mono">audit_log</td><td>Who did what, when &mdash; every admin action and every identity reveal</td><td>polymorphic</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4 class="subsub">Rules baked into the design</h4>
+      <div class="prose">
+        <p>No raw government ID numbers are ever stored &mdash; <span class="mono">kyc_verifications</span> keeps a provider reference and a status, nothing else, per your Master Instruction's data-minimization requirement and India's DPDPA law (&sect;08). Every table that can be deleted by a user (like an account) is <em>soft-deleted</em> first &mdash; marked hidden, not physically erased &mdash; so financial and safety records stay intact for the legally required retention period, then hard-deleted on a schedule. All money and identity-sensitive tables get created-at/updated-at timestamps and go through versioned migrations (tracked, reversible database changes) rather than being edited by hand, so nothing changes in production without a record of exactly what and when.</p>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section class="doc-section" id="s8">
+      <div class="sec-head"><span class="sec-num">08</span><h2>Security plan</h2></div>
+      <p class="lede">This is the section your Investor Document calls "the #1 investor concern," and it's also the one with real-world stakes: this app introduces two strangers in person. Software can reduce risk; it can't eliminate it. Both halves matter below.</p>
+
+      <div class="callout stop">
+        <span class="callout-label">Stop &amp; flag &mdash; this needs a lawyer, not just an engineer</span>
+        <p>K-Meets facilitates real-world, in-person meetings between strangers, and collects biometric-adjacent KYC data (a face video plus a government ID). That combination touches consumer-safety liability, India's DPDPA data-protection law, and RBI-adjacent KYC-vendor rules. I can build every technical safeguard listed below, and I can flag the compliance shape of the problem &mdash; but I'm not able to tell you your app is "legally compliant" or "not liable if something goes wrong," and neither should any AI. Before you take your first paying user, get an Indian counsel to review: your Terms of Service and liability language, your DPDPA consent flows, and whether event/meetup liability insurance makes sense. Please don't let marketing copy (including "5-layer safety architecture") imply a guarantee of safety that the product can't actually make.</p>
+      </div>
+
+      <h3 class="sub">What's enforced in the software</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Area</th><th>What we build</th></tr></thead>
+          <tbody>
+            <tr><td>Login</td><td>Phone OTP only (no passwords to leak); OTP requests rate-limited (max 5/hour per number) to stop abuse; short-lived session tokens that can be revoked on logout or a new device login</td></tr>
+            <tr><td>Identity reveal</td><td>Name/photo fields are excluded from the API response itself until both check-ins are recorded server-side &mdash; not just hidden in the app's UI, which a user could bypass by reading the raw network traffic</td></tr>
+            <tr><td>Authorization</td><td>Every request that touches a booking, match, report or SOS alert checks server-side that the requester is actually a participant &mdash; prevents one member ever pulling up another's data by guessing an ID (this class of bug is called IDOR, and it's one of the most common ways apps like this leak data)</td></tr>
+            <tr><td>KYC data</td><td>No ID numbers stored; raw KYC video held only as long as the provider needs to verify, then deleted on schedule; only a verified/rejected flag persists</td></tr>
+            <tr><td>Payments</td><td>Razorpay's hosted checkout &mdash; card details never reach our servers; every webhook is signature-verified before we trust it; duplicate payment confirmations are rejected via idempotency keys</td></tr>
+            <tr><td>Uploads</td><td>Venue/profile photos validated by actual file content (not just the filename extension), size-capped, stored privately with signed, expiring URLs</td></tr>
+            <tr><td>Admin access</td><td>Role-based: Trust &amp; Safety can moderate but not touch finance; every admin action is written to the audit log, including who viewed what</td></tr>
+            <tr><td>Input handling</td><td>Every field validated on the server (never trusting what the app sends), parameterised database queries throughout to rule out SQL injection, output-escaped to rule out script injection</td></tr>
+            <tr><td>Secrets</td><td>API keys and database credentials live in environment variables, never in code; a <span class="mono">.env.example</span> file with placeholder names ships in the codebase, real values never do</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub">What's enforced by process (needs you, not code)</h3>
+      <div class="prose">
+        <p>The CCTV your deck relies on is the venue's own, not something K-Meets installs or controls &mdash; we can verify it exists during onboarding, but we can't guarantee it's working or monitored on any given day. The three-strike/ban system only works if reports get reviewed quickly, which needs a real person (your Trust &amp; Safety hire) checking the queue, especially in the first months when it's likely just you. And Video KYC verifies that someone holds a real PAN or Passport &mdash; it's a strong deterrent against catfishing, but it isn't a criminal background check.</p>
+      </div>
+    </section>
+
+    <!-- 9 -->
+    <section class="doc-section" id="s9">
+      <div class="sec-head"><span class="sec-num">09</span><h2>Performance plan</h2></div>
+      <p class="lede">The goal at your Year-1 scale (1,200 monthly active users) is not "handle internet-scale traffic" &mdash; it's "never make someone wait on a spinner for something that should be instant."</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Layer</th><th>What we do</th></tr></thead>
+          <tbody>
+            <tr><td>Matching</td><td>Runs as a background job on a Redis-backed queue, never inside the request a user is waiting on &mdash; booking confirms instantly, the match notification arrives moments later</td></tr>
+            <tr><td>Venue browsing</td><td>Venue lists and photos are cached (Redis, short TTL) since they change rarely compared to how often they're viewed</td></tr>
+            <tr><td>Database queries</td><td>Indexes on every column we filter by often (venue + date on bookings, status on reports, user on payments); pagination on every list endpoint so we never return an unbounded result set</td></tr>
+            <tr><td>Images</td><td>Resized on upload and served through CloudFront (a CDN) so a venue photo loads from a nearby server, not all the way from AWS's origin every time</td></tr>
+            <tr><td>Third-party calls</td><td>KYC and payment provider calls run with explicit timeouts and are never retried infinitely on failure &mdash; a stuck provider call fails visibly instead of hanging a request</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="doc-section" id="s10">
+      <div class="sec-head"><span class="sec-num">10</span><h2>Deployment plan</h2></div>
+      <p class="lede">In plain terms: <em>deployment</em> is the process of taking finished code and putting it on a real server the public can reach. Here's how it'll work, end to end.</p>
+      <div class="prose">
+        <p><strong>Three environments.</strong> <em>Local</em> is the copy running on the development machine while building &mdash; nobody else can see it. <em>Staging</em> is a private copy on AWS that looks exactly like production but uses test/sandbox Razorpay and KYC keys, so we can try a real booking end-to-end without spending real money or creating a real KYC record. <em>Production</em> is the live app real users touch, using real payment and KYC keys.</p>
+        <p><strong>Domain &amp; HTTPS.</strong> You'll need to buy a domain (for example, kmeets.in or kmeets.app) &mdash; I'll walk you through exactly where to click when we get there. Once pointed at AWS, HTTPS (the padlock in the browser, meaning traffic is encrypted) is issued and renewed automatically &mdash; no manual certificate management.</p>
+        <p><strong>How an update goes live.</strong> Every code change runs through an automated pipeline (GitHub Actions) that lints it, type-checks it, runs the test suite, and only then builds and deploys it &mdash; first to staging automatically, then to production after an explicit approval step. A change that fails any of those checks simply cannot reach production.</p>
+        <p><strong>Rolling back.</strong> Every deployment is tagged, so reverting to the previous working version is a single command, typically live again in under two minutes. Database changes are written to be backward-compatible where possible (add new columns/tables rather than destructively changing existing ones in the same step) specifically so a rollback doesn't get stranded by a database that's moved ahead of the code.</p>
+        <p><strong>Backups.</strong> The production database takes automated daily snapshots with 30-day retention and point-in-time recovery (can restore to almost any minute in the last few days, not just the last daily snapshot). A backup we've never tried to restore isn't a real backup, so we'll run an actual restore drill before go-live and again roughly every quarter.</p>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section class="doc-section" id="s11">
+      <div class="sec-head"><span class="sec-num">11</span><h2>Risks</h2></div>
+      <p class="lede">Your Investor Document already names most of the business risks well &mdash; here they are alongside the engineering and legal risks that come from actually building the software.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Risk</th><th>Severity</th><th>Mitigation</th></tr></thead>
+          <tbody>
+            <tr><td>Physical safety incident during a meetup</td><td><span class="pill pill-sev-critical">Critical</span></td><td>5-layer safety design (&sect;08) + venue CCTV verification + insurance and ToS reviewed by counsel. Software reduces likelihood; it cannot remove real-world risk.</td></tr>
+            <tr><td>Cold start &mdash; no matches in early weeks</td><td><span class="pill pill-sev-critical">Critical</span></td><td>Your community-first GTM: seed 200&ndash;500 members through in-person events before the matching engine has to work with a thin pool</td></tr>
+            <tr><td>DPDPA / KYC data-handling exposure</td><td><span class="pill pill-sev-high">High</span></td><td>Data minimization by design (&sect;07/&sect;08), explicit consent flows, provider data-processing agreements, counsel review before launch</td></tr>
+            <tr><td>Solo/small-team execution risk on a non-trivial codebase</td><td><span class="pill pill-sev-medium">Medium</span></td><td>Phased delivery with a working, demoable checkpoint after each phase (&sect;13) rather than one giant build; clear documentation so a future hire can pick this up</td></tr>
+            <tr><td>Third-party outage (KYC, payments, SMS)</td><td><span class="pill pill-sev-medium">Medium</span></td><td>KYC provider sits behind a swappable interface; payment/SMS failures degrade gracefully with clear user messaging instead of silent failure</td></tr>
+            <tr><td>Moderation queue overwhelms a tiny team</td><td><span class="pill pill-sev-medium">Medium</span></td><td>Community ratings surface problems early; 3-strike system limits how much any one bad actor can do before removal</td></tr>
+            <tr><td>Payment double-processing / webhook fraud</td><td><span class="pill pill-sev-medium">Medium</span></td><td>Signature verification on every webhook, idempotency keys on every payment confirmation</td></tr>
+            <tr><td>App Store rejection/delay if native app is chosen</td><td><span class="pill pill-sev-medium">Medium</span></td><td>Only applies if &sect;12 Q1 is answered "native" &mdash; budget 1&ndash;2 weeks of review buffer per release</td></tr>
+            <tr><td>Gender-ratio imbalance breaks group matching</td><td><span class="pill pill-sev-medium">Medium</span></td><td>Daily ratio tracking, women-first booking windows if it skews, per your deck</td></tr>
+            <tr><td>Cloud cost overrun if traction beats projections</td><td><span class="pill pill-sev-low">Low</span></td><td>Managed, autoscaling services with billing alerts rather than fixed over-provisioned servers</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 12 -->
+    <section class="doc-section" id="s12">
+      <div class="sec-head"><span class="sec-num">12</span><h2>Open questions</h2></div>
+      <p class="lede">Per your Master Instruction, I'm only asking what genuinely needs your judgment &mdash; not technical trivia I can reasonably decide myself. I've sent these as a quick-choice form alongside this document; here's the reasoning behind each.</p>
+
+      <h4 class="subsub">1. Consumer app: native mobile app, or mobile-web first?</h4>
+      <p class="prose">Your deck says React Native, iOS + Android. That gets you into app stores, which reads well to investors and users alike, but adds real time (app store review, 1&ndash;2 weeks per release, occasional rejections to fix) and cost (developer accounts) before your first user can install anything. A mobile-optimised web app launches the moment we deploy it, works on any phone via a browser, and can be installed to a home screen &mdash; but it's a step removed from "an app," and doesn't get native push notifications as smoothly. This is genuinely your call because it trades launch speed against how the product presents to investors and users.</p>
+
+      <h4 class="subsub">2. How should I pace this build?</h4>
+      <p class="prose">Your Master Instruction is explicit that I shouldn't build the whole thing blindly in one giant pass. I'd like to build phase by phase (project setup &rarr; database &rarr; auth &rarr; core booking/matching &rarr; community layer &rarr; admin/finance &rarr; polish &rarr; security/performance audit &rarr; deployment prep), showing you a working, testable result after each phase before moving to the next. The alternative is building as much as possible autonomously between check-ins. The phased approach is slower to reach "everything," but catches misunderstandings early and matches your own instructions &mdash; I'd recommend it, but it's your project.</p>
+
+      <h4 class="subsub">3. Where are you starting from operationally?</h4>
+      <p class="prose">This tells me whether to wire the code against real sandbox accounts now, or build every external integration (payments, KYC, SMS, cloud hosting) behind a swappable interface using safe test doubles until real accounts exist. Specifically: do you have a registered company yet (Razorpay and most India KYC vendors require one to issue even sandbox/test credentials in some cases), and have you already signed up for any of Razorpay, Signzy/Digio, MSG91, or AWS?</p>
+
+      <div class="callout note">
+        <span class="callout-label">Answered elsewhere, not asked again here</span>
+        <p>City to launch in (Hyderabad first, per &sect;01/&sect;02), the three-app structure, the core anonymity mechanic, and the revenue model are all clearly specified in your materials &mdash; I've treated those as settled rather than re-asking.</p>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section class="doc-section" id="s13">
+      <div class="sec-head"><span class="sec-num">13</span><h2>Implementation roadmap</h2></div>
+      <p class="lede">This follows your Master Instruction's 24-step process, grouped into the phases I'll actually check in with you on. Each phase ends with things working and tested before the next one starts &mdash; never building on top of known-broken code.</p>
+
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-head"><span class="tl-phase">Phase 1&ndash;2 &middot; done</span><span class="tl-title">Understand the product, propose the architecture</span></div><p>This document. Awaiting your answers in &sect;12 before Phase 3 starts.</p></div>
+        <div class="tl-item"><div class="tl-head"><span class="tl-phase">Phase 3&ndash;4</span><span class="tl-title">Project setup &amp; database foundation</span></div><p>Codebase scaffolding, tooling, environment configuration, the full database schema and migrations from &sect;07.</p></div>
+        <div class="tl-item"><div class="tl-head"><span class="tl-phase">Phase 5</span><span class="tl-title">Authentication &amp; authorization</span></div><p>Phone OTP, sessions, role-based access, the KYC provider interface (stubbed until real accounts exist per &sect;12 Q3).</p></div>
+        <div class="tl-item"><div class="tl-head"><span class="tl-phase">Phase 6 &middot; your Sprint 1&ndash;2</span><span class="tl-title">Core: events platform &amp; meetup engine</span></div><p>Community event booking + payment (your already-validated flow), venue listings, slot booking, the matching algorithm, and the anonymity-until-reveal mechanic.</p></div>
+        <div class="tl-item"><div class="tl-head"><span class="tl-phase">Phase 7 &middot; your Sprint 3</span><span class="tl-title">Secondary: community layer</span></div><p>Post-meetup connect/pass, ratings, reports, the 3-strike system, SOS flow, referrals.</p></div>
+        <div class="tl-item"><div class="tl-head"><span class="tl-phase">Phase 7b &middot; your Sprint 4</span><span class="tl-title">Revenue &amp; admin</span></div><p>Commission tracking, venue payouts, the admin dashboard, the partner dashboard.</p></div>
+        <div class="tl-item"><div class="tl-head"><span class="tl-phase">Phase 8&ndash;9</span><span class="tl-title">UI/UX refinement &amp; automated tests</span></div><p>Loading/empty/error states, responsiveness, accessibility pass, then unit/integration/API/security tests.</p></div>
+        <div class="tl-item"><div class="tl-head"><span class="tl-phase">Phase 10&ndash;11</span><span class="tl-title">Security audit &amp; performance review</span></div><p>Full checklist from your Master Instruction &sect;33: auth, authorization, injection, IDOR, secrets, rate limits, and more &mdash; findings classified Critical/High/Medium/Low and fixed before moving on.</p></div>
+        <div class="tl-item"><div class="tl-head"><span class="tl-phase">Phase 12&ndash;14</span><span class="tl-title">Production prep, deployment, documentation</span></div><p>Production checklist, exact step-by-step deployment guide written for a non-technical reader, README, environment guide, troubleshooting guide, and post-deploy smoke testing.</p></div>
+      </div>
+    </section>
+
+    <footer class="doc-footer">
+      Prepared from KMeets_Investor_Document.pdf, KMeets_Investor_Deck.pptx and Master_Instruction &mdash; Build_My_Application_EndtoEnd.docx. This document represents Phase 1&ndash;2 of that instruction. No application code has been written yet.
+    </footer>
+  </main>
+</div>
+
+<script>
+(function(){
+  var sections = Array.prototype.slice.call(document.querySelectorAll('section.doc-section'));
+  var toc = document.getElementById('toc');
+  var mobilenav = document.getElementById('mobilenav');
+  sections.forEach(function(sec){
+    var num = sec.querySelector('.sec-num').textContent;
+    var title = sec.querySelector('h2').textContent;
+    var id = sec.id;
+
+    var li = document.createElement('li');
+    var a = document.createElement('a');
+    a.href = '#' + id;
+    a.innerHTML = '<span class="num">' + num + '</span><span>' + title + '</span>';
+    li.appendChild(a);
+    toc.appendChild(li);
+
+    var ma = document.createElement('a');
+    ma.href = '#' + id;
+    ma.textContent = num + ' ' + title;
+    mobilenav.appendChild(ma);
+  });
+})();
+</script>

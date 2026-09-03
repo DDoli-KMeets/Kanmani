@@ -1,0 +1,12 @@
+{
+  "name": "K-Meets",
+  "short_name": "K-Meets",
+  "description": "Book a curated meetup with someone new. Anonymous until you both show up.",
+  "start_url": "/meetups",
+  "display": "standalone",
+  "background_color": "#faf6f2",
+  "theme_color": "#3d0f3a",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

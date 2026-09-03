@@ -1,0 +1,38 @@
+{
+  "name": "kmeets",
+  "private": true,
+  "version": "0.1.0",
+  "description": "K-Meets — curated anonymous stranger-meetup platform. Monorepo root.",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev:api": "pnpm --filter @kmeets/api dev",
+    "dev:web": "pnpm --filter @kmeets/web dev",
+    "dev:staff": "pnpm --filter @kmeets/staff dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "smoke-test": "node scripts/smoke-test.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^15.15.0",
+    "ioredis": "^5.4.1",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.69.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "multer": ">=2.2.0",
+      "lodash": ">=4.18.0",
+      "file-type": ">=21.3.2",
+      "qs": ">=6.15.2",
+      "body-parser": ">=1.20.6"
+    }
+  }
+}
